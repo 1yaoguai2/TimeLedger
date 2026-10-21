@@ -1,0 +1,4 @@
+# 纯静态站点，不需要任何构建步骤
+[build]
+  publish = "."
+  command = ""

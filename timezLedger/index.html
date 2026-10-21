@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="时间账本">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>时间账本</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-title">时间账本</div>
+  <div class="app-sub" id="headerDate"></div>
+</header>
+
+<main id="main">
+
+  <!-- ============ 计时 ============ -->
+  <section class="view" id="view-timer">
+
+    <div class="running-card" id="runningCard" hidden>
+      <div class="running-head">
+        <span class="pulse-dot" id="runDot"></span>
+        <span class="running-name" id="runName"></span>
+        <span class="running-since" id="runSince"></span>
+      </div>
+      <div class="running-time" id="runTime">00:00:00</div>
+      <div class="running-sub" id="runSub"></div>
+      <div class="running-actions">
+        <button class="btn btn-ghost" id="btnPause">暂停</button>
+        <button class="btn btn-danger" id="btnStop">结束</button>
+      </div>
+    </div>
+
+    <div class="idle-card" id="idleCard">
+      <div class="idle-icon">⏱</div>
+      <p class="idle-text">当前没有进行中的事件</p>
+      <p class="idle-hint">点击下方事件即可开始计时</p>
+    </div>
+
+    <div class="card pomo-card">
+      <label class="switch-row">
+        <span class="switch-label">番茄钟模式</span>
+        <span class="switch">
+          <input type="checkbox" id="pomoToggle">
+          <span class="slider"></span>
+        </span>
+      </label>
+      <div class="pomo-info" id="pomoInfo">工作 25 分钟 / 休息 5 分钟</div>
+    </div>
+
+    <div class="section-head">
+      <span>选择事件</span>
+      <button class="link-btn" id="btnQuickAdd">+ 新增</button>
+    </div>
+    <div class="task-grid" id="taskGrid"></div>
+
+    <div class="section-head">
+      <span>今日记录</span>
+      <span class="section-meta" id="todayTotal"></span>
+    </div>
+    <div class="record-list" id="todayList"></div>
+
+    <button class="fab-secondary" id="btnManual">手动补录</button>
+  </section>
+
+  <!-- ============ 统计 ============ -->
+  <section class="view" id="view-stats" hidden>
+    <div class="seg" id="periodSeg">
+      <button data-period="day">今日</button>
+      <button data-period="week" class="active">本周</button>
+      <button data-period="month">本月</button>
+    </div>
+
+    <div class="stat-summary" id="statSummary"></div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>时间分布</h3>
+        <span class="card-meta" id="donutMeta"></span>
+      </div>
+      <div class="donut-wrap" id="donutWrap"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>趋势对比</h3>
+        <span class="card-meta" id="trendMeta"></span>
+      </div>
+      <div class="bars" id="trendBars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>每日时间线</h3>
+        <span class="card-meta" id="timelineMeta"></span>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>目标进度</h3></div>
+      <div class="goals" id="goals"></div>
+    </div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section class="view" id="view-settings" hidden>
+    <div class="card">
+      <div class="card-head"><h3>事件管理</h3></div>
+      <div class="manage-list" id="manageList"></div>
+      <button class="btn btn-primary btn-block" id="btnAddTask">+ 新增事件</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>番茄钟</h3></div>
+      <div class="field-row">
+        <label>工作时长（分钟）</label>
+        <input type="number" id="inpWorkMin" min="1" max="180">
+      </div>
+      <div class="field-row">
+        <label>休息时长（分钟）</label>
+        <input type="number" id="inpBreakMin" min="1" max="60">
+      </div>
+      <div class="field-row">
+        <label>一轮番茄数</label>
+        <input type="number" id="inpRounds" min="1" max="12">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>习惯提醒</h3></div>
+      <p class="hint">仅在本页面打开时生效（含后台标签页）。手机锁屏状态下无法推送。</p>
+      <label class="switch-row">
+        <span class="switch-label">启用习惯提醒</span>
+        <span class="switch">
+          <input type="checkbox" id="reminderToggle">
+          <span class="slider"></span>
+        </span>
+      </label>
+      <div class="field-row">
+        <label>超过</label>
+        <input type="number" id="inpIdleHours" min="1" max="72">
+      </div>
+      <p class="hint">某事件超过该小时数没有记录时，提醒你去推进一下。</p>
+      <button class="btn btn-ghost btn-block" id="btnNotifyPerm">开启浏览器通知</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>周报提示</h3></div>
+      <label class="switch-row">
+        <span class="switch-label">周末打开时显示周报</span>
+        <span class="switch">
+          <input type="checkbox" id="weekReportToggle">
+          <span class="slider"></span>
+        </span>
+      </label>
+      <label class="switch-row">
+        <span class="switch-label">月末打开时显示月报</span>
+        <span class="switch">
+          <input type="checkbox" id="monthReportToggle">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>数据</h3></div>
+      <p class="hint">数据保存在本机浏览器中。清理浏览器数据会丢失，建议定期导出备份。</p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btnExport">导出备份</button>
+        <button class="btn btn-ghost" id="btnImport">导入备份</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btnExportCsv">导出 CSV</button>
+        <button class="btn btn-danger-ghost" id="btnReset">清空数据</button>
+      </div>
+      <input type="file" id="fileImport" accept=".json" hidden>
+    </div>
+
+    <div class="about">时间账本 · 本地版 v1.0<br>数据层已按可同步方式抽象，后续可接入云端</div>
+  </section>
+
+</main>
+
+<nav class="tabbar">
+  <button class="tab active" data-view="timer">
+    <span class="tab-icon">⏱</span><span class="tab-text">计时</span>
+  </button>
+  <button class="tab" data-view="stats">
+    <span class="tab-icon">📊</span><span class="tab-text">统计</span>
+  </button>
+  <button class="tab" data-view="settings">
+    <span class="tab-icon">⚙️</span><span class="tab-text">设置</span>
+  </button>
+</nav>
+
+<!-- ============ 弹窗：新增/编辑事件 ============ -->
+<div class="modal" id="modalTask" hidden>
+  <div class="modal-mask" data-close></div>
+  <div class="modal-panel">
+    <div class="modal-head">
+      <h3 id="taskModalTitle">新增事件</h3>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">名称</label>
+      <input class="input" id="inpTaskName" placeholder="例如：学习英语" maxlength="20">
+
+      <label class="field-label">图标</label>
+      <div class="emoji-grid" id="emojiGrid"></div>
+
+      <label class="field-label">颜色</label>
+      <div class="color-grid" id="colorGrid"></div>
+
+      <label class="field-label">每周目标（小时，可留空）</label>
+      <input class="input" id="inpTaskTarget" type="number" min="0" step="0.5" placeholder="留空表示不设目标">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>取消</button>
+      <button class="btn btn-primary" id="btnSaveTask">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 弹窗：手动补录 ============ -->
+<div class="modal" id="modalManual" hidden>
+  <div class="modal-mask" data-close></div>
+  <div class="modal-panel">
+    <div class="modal-head">
+      <h3>手动补录</h3>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">事件</label>
+      <select class="input" id="inpManualTask"></select>
+
+      <label class="field-label">日期</label>
+      <input class="input" type="date" id="inpManualDate">
+
+      <div class="field-row-2">
+        <div>
+          <label class="field-label">开始时间</label>
+          <input class="input" type="time" id="inpManualStart">
+        </div>
+        <div>
+          <label class="field-label">结束时间</label>
+          <input class="input" type="time" id="inpManualEnd">
+        </div>
+      </div>
+
+      <label class="field-label">备注（可留空）</label>
+      <input class="input" id="inpManualNote" maxlength="50" placeholder="例如：背单词 30 组">
+      <p class="hint" id="manualPreview"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>取消</button>
+      <button class="btn btn-primary" id="btnSaveManual">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 弹窗：周报/月报 ============ -->
+<div class="modal" id="modalReport" hidden>
+  <div class="modal-mask" data-close></div>
+  <div class="modal-panel modal-panel-report">
+    <div class="modal-head">
+      <h3 id="reportTitle">本周小结</h3>
+      <button class="icon-btn" data-close>✕</button>
+    </div>
+    <div class="modal-body" id="reportBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>知道了</button>
+      <button class="btn btn-primary" id="btnReportDetail">查看详情</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/store.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
